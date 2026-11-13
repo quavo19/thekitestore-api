@@ -13,6 +13,7 @@ class User < ApplicationRecord
   belongs_to :role, optional: true
   has_many :user_permissions, dependent: :destroy
   has_many :permissions, through: :user_permissions
+  has_many :assistant_delegations, dependent: :destroy
   has_many :orders, dependent: :destroy
   has_many :transactions, dependent: :nullify
   has_many :reviews, dependent: :destroy
@@ -43,6 +44,7 @@ class User < ApplicationRecord
 
   # Callbacks
   before_create :set_default_role
+  after_update :revoke_assistant_delegations, if: :assistant_identity_changed?
   after_create :ensure_bonus
   after_destroy_commit :delete_avatar_from_r2
   after_update_commit :delete_old_avatar_from_r2, if: :saved_change_to_avatar_storage_key?
@@ -56,7 +58,6 @@ class User < ApplicationRecord
     token
   end
 
-  DEFAULT_ROLE_ID = "97921d3e-d734-45aa-86da-a2267c68d15d"
   OTP_INTERVAL = 300
 
   # OTP Methods
@@ -143,6 +144,17 @@ class User < ApplicationRecord
 
   private
 
+  def assistant_identity_changed?
+    saved_change_to_email? || saved_change_to_encrypted_password? || saved_change_to_role_id? ||
+      saved_change_to_blocked? || saved_change_to_assistant_email_verified_at?
+  end
+
+  def revoke_assistant_delegations
+    assistant_delegations.where(revoked_at: nil).update_all(revoked_at: Time.current)
+    # An email change always needs fresh ownership verification.
+    update_column(:assistant_email_verified_at, nil) if saved_change_to_email?
+  end
+
   def phone_numbers_limit
     phones = Array(phone_numbers).reject(&:blank?)
     errors.add(:phone_numbers, "cannot have more than 3 numbers") if phones.size > 3
@@ -154,7 +166,7 @@ class User < ApplicationRecord
   end
 
   def set_default_role
-    self.role ||= Role.find_by(id: DEFAULT_ROLE_ID)
+    self.role ||= Role.find_by!(name: "CUSTOMER")
   end
 
   def user_not_blocked

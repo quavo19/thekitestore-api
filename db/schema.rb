@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_09_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -163,6 +163,44 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.check_constraint "amount > 0::numeric", name: "affiliate_withdrawals_amount_positive"
   end
 
+  create_table "assistant_challenges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id"
+    t.string "shop_id", null: false
+    t.string "ticket_digest", null: false
+    t.string "email_digest", null: false
+    t.string "code_digest", null: false
+    t.string "auth_fingerprint"
+    t.jsonb "context", default: {}, null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "consumed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id", "email_digest", "created_at"], name: "assistant_challenges_email_window"
+    t.index ["ticket_digest"], name: "index_assistant_challenges_on_ticket_digest", unique: true
+    t.index ["user_id"], name: "index_assistant_challenges_on_user_id"
+  end
+
+  create_table "assistant_delegations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "shop_id", null: false
+    t.string "audience", null: false
+    t.jsonb "context", null: false
+    t.string "code_digest", null: false
+    t.string "grant_digest"
+    t.datetime "issued_at", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "consented_at", null: false
+    t.string "policy_version", null: false
+    t.datetime "consumed_at"
+    t.datetime "revoked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code_digest"], name: "index_assistant_delegations_on_code_digest", unique: true
+    t.index ["grant_digest"], name: "index_assistant_delegations_on_grant_digest", unique: true
+    t.index ["user_id"], name: "index_assistant_delegations_on_user_id"
+  end
+
   create_table "badges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -254,7 +292,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.datetime "updated_at", null: false
     t.index ["pricing_zone", "shipping_category"], name: "index_delivery_high_value_rates_on_zone_and_category", unique: true
     t.check_constraint "fee >= 0::numeric", name: "delivery_high_value_rates_fee_non_negative"
-    t.check_constraint "pricing_zone::text = ANY (ARRAY['near'::character varying, 'far'::character varying]::text[])", name: "delivery_high_value_rates_pricing_zone_valid"
+    t.check_constraint "pricing_zone::text = ANY (ARRAY['near'::character varying::text, 'far'::character varying::text])", name: "delivery_high_value_rates_pricing_zone_valid"
   end
 
   create_table "delivery_settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -276,7 +314,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.check_constraint "fee >= 0::numeric", name: "delivery_weight_tiers_fee_non_negative"
     t.check_constraint "max_weight_kg IS NULL OR max_weight_kg > min_weight_kg", name: "delivery_weight_tiers_max_above_min"
     t.check_constraint "min_weight_kg >= 0::numeric", name: "delivery_weight_tiers_min_weight_non_negative"
-    t.check_constraint "pricing_zone::text = ANY (ARRAY['near'::character varying, 'far'::character varying]::text[])", name: "delivery_weight_tiers_pricing_zone_valid"
+    t.check_constraint "pricing_zone::text = ANY (ARRAY['near'::character varying::text, 'far'::character varying::text])", name: "delivery_weight_tiers_pricing_zone_valid"
   end
 
   create_table "delivery_zones", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -301,7 +339,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.index ["region", "city", "town", "market_name"], name: "index_delivery_zones_on_location_hierarchy"
     t.index ["region"], name: "index_delivery_zones_on_region"
     t.index ["town"], name: "index_delivery_zones_on_town"
-    t.check_constraint "pricing_zone::text = ANY (ARRAY['near'::character varying, 'far'::character varying]::text[])", name: "delivery_zones_pricing_zone_valid"
+    t.check_constraint "pricing_zone::text = ANY (ARRAY['near'::character varying::text, 'far'::character varying::text])", name: "delivery_zones_pricing_zone_valid"
   end
 
   create_table "downtimes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -475,8 +513,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.index ["status"], name: "index_products_on_status"
     t.check_constraint "affiliate_commission_amount >= 0::numeric", name: "products_affiliate_commission_amount_non_negative"
     t.check_constraint "bonus_points >= 0", name: "products_bonus_points_non_negative"
-    t.check_constraint "shipping_type::text = ANY (ARRAY['bulk'::character varying, 'high_value'::character varying]::text[])", name: "products_shipping_type_valid"
-    t.check_constraint "weight_class IS NULL OR (weight_class::text = ANY (ARRAY['light'::character varying, 'medium'::character varying, 'heavy'::character varying]::text[]))", name: "products_weight_class_valid"
+    t.check_constraint "shipping_type::text = ANY (ARRAY['bulk'::character varying::text, 'high_value'::character varying::text])", name: "products_shipping_type_valid"
+    t.check_constraint "weight_class IS NULL OR (weight_class::text = ANY (ARRAY['light'::character varying::text, 'medium'::character varying::text, 'heavy'::character varying::text]))", name: "products_weight_class_valid"
     t.check_constraint "weight_kg IS NULL OR weight_kg >= 0::numeric", name: "products_weight_kg_non_negative"
   end
 
@@ -555,9 +593,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.index ["purpose"], name: "index_transactions_on_purpose"
     t.index ["status"], name: "index_transactions_on_status"
     t.index ["user_id"], name: "index_transactions_on_user_id"
-    t.check_constraint "direction::text = ANY (ARRAY['credit'::character varying, 'debit'::character varying]::text[])", name: "transactions_direction_valid"
+    t.check_constraint "direction::text = ANY (ARRAY['credit'::character varying::text, 'debit'::character varying::text])", name: "transactions_direction_valid"
     t.check_constraint "order_id IS NOT NULL OR affiliate_withdrawal_id IS NOT NULL", name: "transactions_reference_present"
-    t.check_constraint "purpose::text = ANY (ARRAY['order_payment'::character varying, 'affiliate_withdrawal_payout'::character varying]::text[])", name: "transactions_purpose_valid"
+    t.check_constraint "purpose::text = ANY (ARRAY['order_payment'::character varying::text, 'affiliate_withdrawal_payout'::character varying::text])", name: "transactions_purpose_valid"
   end
 
   create_table "user_badges", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -599,6 +637,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
     t.string "uid"
     t.text "phone_numbers", default: [], null: false, array: true
     t.string "avatar_storage_key"
+    t.datetime "assistant_email_verified_at"
     t.index ["avatar_storage_key"], name: "index_users_on_avatar_storage_key"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["provider", "uid"], name: "index_users_on_provider_and_uid", unique: true, where: "((provider IS NOT NULL) AND (uid IS NOT NULL))"
@@ -691,6 +730,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_01_090000) do
   add_foreign_key "affiliate_signup_referrals", "users", column: "referred_user_id"
   add_foreign_key "affiliate_withdrawals", "users", column: "affiliate_user_id"
   add_foreign_key "affiliate_withdrawals", "users", column: "reviewed_by_id"
+  add_foreign_key "assistant_challenges", "users"
+  add_foreign_key "assistant_delegations", "users"
   add_foreign_key "bonuses", "users"
   add_foreign_key "cart_items", "products"
   add_foreign_key "cart_items", "users"

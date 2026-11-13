@@ -7,6 +7,8 @@ module Api
         # Prevent Devise from trying to use sessions
         def create
           build_resource(sign_up_params)
+          # Public registration always creates customers; staff roles require admin assignment.
+          resource.role = Role.find_by!(name: "CUSTOMER")
 
           resource.save
           if resource.persisted?
@@ -21,7 +23,7 @@ module Api
         private
 
         def sign_up_params
-          params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :avatar, :avatar_storage_key, :role_id)
+          params.require(:user).permit(:email, :password, :password_confirmation, :first_name, :last_name, :avatar, :avatar_storage_key)
         end
 
         def respond_with(current_user, _opts = {})

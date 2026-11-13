@@ -18,18 +18,18 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  username: postgres
-  password: qwertyui
+  username: <%= ENV.fetch("DATABASE_USERNAME", "postgres") %>
+  password: <%= ENV["DATABASE_PASSWORD"] %>
 
 development:
   <<: *default
-  database: platinum_vault_api_development
+  database: thekitestore_api_development
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
   # When left blank, PostgreSQL will use the default role. This is
   # the same name as the operating system user running Rails.
-  #username: platinum_vault_api
+  #username: thekitestore_api
 
   # The password associated with the PostgreSQL role (username).
   #password:
@@ -57,7 +57,7 @@ development:
 # Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: platinum_vault_api_test
+  database: thekitestore_api_test
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -82,20 +82,20 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: platinum_vault_api_production
-    username: platinum_vault_api
-    password: <%= ENV["PLATINUM_VAULT_API_DATABASE_PASSWORD"] %>
+    database: thekitestore_api_production
+    username: <%= ENV.fetch("DATABASE_USERNAME", "thekitestore_api") %>
+    password: <%= ENV["THEKITESTORE_API_DATABASE_PASSWORD"] %>
     host: localhost
   cache:
     <<: *primary_production
-    database: platinum_vault_api_production_cache
+    database: thekitestore_api_production_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: platinum_vault_api_production_queue
+    database: thekitestore_api_production_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: platinum_vault_api_production_cable
+    database: thekitestore_api_production_cable
     migrations_paths: db/cable_migrate
 

@@ -17,7 +17,7 @@ Geocoder.configure(
   
   # HTTP headers (Nominatim requires User-Agent per their usage policy)
   http_headers: {
-    "User-Agent" => ENV.fetch("GEOCODER_USER_AGENT", "DeyarrahAPI/1.0")
+    "User-Agent" => ENV.fetch("GEOCODER_USER_AGENT", "TheKiteStoreAPI/1.0")
   },
   
   # Cache configuration (optional - can use Redis, file, etc.)

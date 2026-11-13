@@ -38,8 +38,16 @@ module Api
         end
 
         def frontend_callback_url
-          frontend_url = requested_frontend_origin || ENV.fetch("CUSTOMER_FRONTEND_URL", ENV.fetch("FRONTEND_URL", "http://localhost:3002"))
+          frontend_url = affiliate_frontend_origin || requested_frontend_origin || ENV.fetch("CUSTOMER_FRONTEND_URL", ENV.fetch("FRONTEND_URL", "http://localhost:3002"))
           "#{frontend_url}/auth/google/callback"
+        end
+
+        # Select only a server-configured destination; never redirect a JWT to an
+        # arbitrary origin supplied by the browser (including LAN addresses).
+        def affiliate_frontend_origin
+          return unless request.env.dig("omniauth.params", "frontend") == "affiliate"
+
+          ENV["AFFILIATE_FRONTEND_URL"].presence&.delete_suffix("/") || "http://localhost:3003"
         end
 
         def requested_frontend_origin

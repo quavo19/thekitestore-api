@@ -1,6 +1,18 @@
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
+      # Assistant service boundary: disabled unless explicitly configured; no general JWTs.
+      namespace :assistant do
+        get "catalog", to: "catalog#index"
+        get "catalog/:id", to: "catalog#show"
+        get "catalog/:id/availability", to: "catalog#availability"
+        post "onboarding/authenticate", to: "onboarding#authenticate"
+        post "onboarding/verify", to: "onboarding#verify"
+        post "delegations/exchange", to: "delegations#exchange"
+        post "delegations/validate", to: "delegations#validate"
+        post "delegations/revoke", to: "delegations#revoke"
+      end
+
       # Authentication routes
       devise_for :users, path: "auth", path_names: {
         sign_in: "login",

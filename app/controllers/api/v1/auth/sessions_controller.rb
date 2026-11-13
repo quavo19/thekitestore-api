@@ -55,6 +55,24 @@ module Api
           respond_with(user)
         end
 
+        def destroy
+          # Revocation is independent of ordinary JWT/session logout implementation.
+          token = extract_token_from_header
+          claims = token && decode_jwt_token_for_logout(token)
+          if claims
+            User.find_by(id: claims["sub"] || claims["user_id"])&.assistant_delegations&.
+              where(revoked_at: nil)&.update_all(revoked_at: Time.current)
+          end
+          if claims && claims["jti"] && claims["exp"]
+            JwtDenylist.find_or_create_by!(jti: claims["jti"]) { |entry| entry.exp = Time.at(claims["exp"]) }
+          end
+          sign_out(resource_name)
+          # This app's legacy JWTs omit Warden's `scp`. Revocation is handled above;
+          # prevent the middleware from decoding/revoking the same token again.
+          request.env.delete("HTTP_AUTHORIZATION")
+          render json: { status: { code: 200, message: "Logged out successfully." } }, status: :ok
+        end
+
         private
 
         def respond_with(current_user, _opts = {})

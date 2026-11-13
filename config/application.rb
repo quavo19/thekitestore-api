@@ -9,7 +9,7 @@ require "dotenv/load" if File.exist?(File.join(__dir__, "..", ".env"))
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-module PlatinumVaultApi
+module ThekitestoreApi
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.0
@@ -34,7 +34,7 @@ module PlatinumVaultApi
 
     # Add session middleware for Sidekiq web UI
     config.middleware.use ActionDispatch::Cookies
-    config.middleware.use ActionDispatch::Session::CookieStore, key: "_deyarrah_session"
+    config.middleware.use ActionDispatch::Session::CookieStore, key: "_thekitestore_session"
 
     config.generators do |g|
       g.orm :active_record, primary_key_type: :uuid

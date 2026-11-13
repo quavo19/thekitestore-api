@@ -5,7 +5,7 @@ module Api
     module Customer
       module Products
         class ProductsController < BaseController
-          REVIEW_HASH_SALT = "karaboome-reviewer".freeze
+          REVIEW_HASH_SALT = "thekitestore-user-frontend-reviewer".freeze
 
           def index
             @products = Product.includes(
