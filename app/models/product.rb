@@ -32,6 +32,9 @@ class Product < ApplicationRecord
   before_destroy :destroy_related_variant_stocks
   after_save :update_status_if_needed
 
+  validates :condition_notes, presence: true, if: :hot_deal?
+  validates :compare_at_price, numericality: { greater_than: 0 }, allow_nil: true
+  validate :hot_deal_must_be_one_unit
   validates :name, presence: true
   validates :bookable_type, presence: true
   validates :shipping_type, presence: true, inclusion: { in: shipping_types.keys }
@@ -84,6 +87,15 @@ class Product < ApplicationRecord
   end
 
   private
+
+  def hot_deal_must_be_one_unit
+    return unless hot_deal?
+
+    errors.add(:bookable_type, "must be unit for a hot deal") unless unit?
+    if persisted? && variant_stocks.sum(:quantity) > 1
+      errors.add(:hot_deal, "requires no more than one unit across all warehouses")
+    end
+  end
 
   def normalize_shipping_fields
     self.shipping_type = shipping_type.to_s.strip.presence || "bulk"

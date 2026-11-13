@@ -17,6 +17,9 @@ module Api
               variant_types: { variant_options: :images }
             ).where(active: true)
 
+            @products = @products.where(demo: false) unless Rails.env.development?
+            @products = @products.where(hot_deal: true) if ActiveModel::Type::Boolean.new.cast(params[:hot_deal])
+
             if params[:search].present?
               @products = @products.matching_search(params[:search])
             end
@@ -66,6 +69,10 @@ module Api
                     name: product.name,
                     description: product.description,
                     bookable_type: product.bookable_type,
+                    hot_deal: product.hot_deal,
+                    condition_notes: product.condition_notes,
+                    compare_at_price: product.compare_at_price&.to_f,
+                    demo: product.demo,
                     status: product.status,
                     base_price: product.base_price.to_f,
                     bonus_points: product.bonus_points,
@@ -73,7 +80,7 @@ module Api
                     default_variant_stock: default_variant_stock_json(product),
                     review_summary: review_summary(product),
                     delivery_rate_per_km: product.delivery_rate_per_km.to_f,
-                    image_url: first_image&.url,
+                    image_url: public_image_url(first_image&.url),
                     category: primary_category(product),
                     categories: product.categories.sort_by(&:name).map { |category| category_json(category) },
                     sub_categories: product.sub_categories.sort_by(&:name).map { |sub_category| sub_category_json(sub_category) },
@@ -101,7 +108,7 @@ module Api
               :variant_stocks,
               { sub_categories: :category },
               variant_types: { variant_options: :images }
-            ).where(active: true).find(params[:id])
+            ).where(active: true).then { |scope| Rails.env.development? ? scope : scope.where(demo: false) }.find(params[:id])
 
             render json: {
               data: {
@@ -111,6 +118,10 @@ module Api
                   name: @product.name,
                   description: @product.description,
                   bookable_type: @product.bookable_type,
+                  hot_deal: @product.hot_deal,
+                  condition_notes: @product.condition_notes,
+                  compare_at_price: @product.compare_at_price&.to_f,
+                  demo: @product.demo,
                   status: @product.status,
                   base_price: @product.base_price.to_f,
                   bonus_points: @product.bonus_points,
@@ -136,11 +147,15 @@ module Api
 
           private
 
+          def public_image_url(url)
+            url&.start_with?("/demo-products/") ? "#{request.base_url}#{url}" : url
+          end
+
           def format_product_images(product)
             product.images.order(created_at: :desc).map do |image|
               {
                 id: image.id,
-                url: image.url,
+                url: public_image_url(image.url),
                 storage_key: image.storage_key,
                 owner_type: "Product",
                 owner_id: product.id,
@@ -190,7 +205,7 @@ module Api
             image = option&.images&.order(created_at: :desc)&.first
             return nil unless image
 
-            { id: image.id, url: image.url }
+            { id: image.id, url: public_image_url(image.url) }
           end
 
           def format_product_meta(product)

@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
+  root "status#index"
   namespace :api do
     namespace :v1 do
+      root to: "/status#index"
       # Assistant service boundary: disabled unless explicitly configured; no general JWTs.
       namespace :assistant do
         get "catalog", to: "catalog#index"

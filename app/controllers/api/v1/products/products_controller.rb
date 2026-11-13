@@ -123,7 +123,7 @@ module Api
         def update
           authorize @product
 
-          if @product.update(product_params)
+          if @product.with_lock { @product.update(product_params) }
             sync_product_taxonomy(@product)
             @product.reload
             @product = Product.includes(
@@ -197,6 +197,9 @@ module Api
             :name,
             :description,
             :bookable_type,
+            :hot_deal,
+            :condition_notes,
+            :compare_at_price,
             :active,
             :category_id,
             :delivery_rate_per_km,
@@ -237,6 +240,10 @@ module Api
             name: product.name,
             description: product.description,
             bookable_type: product.bookable_type,
+            hot_deal: product.hot_deal,
+            condition_notes: product.condition_notes,
+            compare_at_price: product.compare_at_price&.to_f,
+            demo: product.demo,
             active: product.active,
             status: product.status,
             bonus_points: product.bonus_points,
@@ -265,6 +272,10 @@ module Api
             created_at: product.created_at.iso8601,
             updated_at: product.updated_at.iso8601
           }
+        end
+
+        def public_image_url(url)
+          url&.start_with?("/demo-products/") ? "#{request.base_url}#{url}" : url
         end
 
         def category_json(category)
@@ -298,7 +309,7 @@ module Api
           product_images = product.images.order(created_at: :desc).map do |image|
             {
                 id: image.id,
-                url: image.url,
+                url: public_image_url(image.url),
                 storage_key: image.storage_key,
                 owner_type: "Product",
               owner_id: product.id,
@@ -313,7 +324,7 @@ module Api
               variant_option.images.order(created_at: :desc).map do |image|
                 {
                   id: image.id,
-                  url: image.url,
+                  url: public_image_url(image.url),
                   storage_key: image.storage_key,
                   owner_type: "VariantOption",
                   owner_id: variant_option.id,

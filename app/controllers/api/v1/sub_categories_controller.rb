@@ -75,7 +75,7 @@ module Api
           category_id: sub_category.category_id,
           name: sub_category.name,
           description: sub_category.description,
-          image_url: sub_category.image_url,
+          image_url: sub_category.image_url&.start_with?("/catalog/") ? "#{request.base_url}#{sub_category.image_url}" : sub_category.image_url,
           image_storage_key: sub_category.image_storage_key,
           category: {
             id: sub_category.category.id,

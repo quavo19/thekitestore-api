@@ -71,7 +71,7 @@ module Api
         private
 
         def set_product
-          @product = Product.where(active: true).find_by(id: params[:product_id] || params[:id])
+          @product = Product.where(active: true, demo: false).find_by(id: params[:product_id] || params[:id])
           return if @product
 
           render json: { error: "Product not found" }, status: :not_found

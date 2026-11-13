@@ -77,7 +77,7 @@ module Api
             @variant_stock = VariantStock.new(params_hash)
             @variant_stock.product_id = @product.id if @product
 
-            if @variant_stock.save
+            if save_stock_with_product_lock { @variant_stock.save }
               authorize @variant_stock
               render json: {
                 data: {
@@ -107,7 +107,7 @@ module Api
         def update
           authorize @variant_stock
 
-          if @variant_stock.update(variant_stock_params)
+          if save_stock_with_product_lock { @variant_stock.update(variant_stock_params) }
             render json: {
               data: {
                 id: @variant_stock.id,
@@ -170,6 +170,13 @@ module Api
         end
 
         private
+
+        def save_stock_with_product_lock
+          product = @variant_stock.product
+          return yield unless product
+
+          product.with_lock { yield }
+        end
 
         def set_product
           @product = Product.find(params[:product_id]) if params[:product_id].present?

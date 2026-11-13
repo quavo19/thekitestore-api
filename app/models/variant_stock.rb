@@ -7,6 +7,7 @@ class VariantStock < ApplicationRecord
 
   validates :quantity, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :warehouse_id, presence: true
+  validate :hot_deal_stock_is_single_unit
   validate :option_ids_is_array
   validate :options_belong_to_same_product, if: -> { option_ids.present? && option_ids.any? }
 
@@ -93,6 +94,18 @@ class VariantStock < ApplicationRecord
   end
 
   private
+
+  def hot_deal_stock_is_single_unit
+    if product&.demo? && quantity.to_i > 0
+      errors.add(:quantity, "must be zero for a sample listing")
+    end
+    return unless product&.hot_deal? && quantity.present?
+
+    other_stock = product.variant_stocks.where.not(id: id).sum(:quantity)
+    if quantity.to_i + other_stock > 1
+      errors.add(:quantity, "cannot exceed one unit across all warehouses for a hot deal")
+    end
+  end
 
   def update_product_status
     product&.update_status

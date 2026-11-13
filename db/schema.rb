@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_09_100000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_13_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -504,9 +504,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_09_100000) do
     t.string "weight_class", default: "medium", null: false
     t.string "shipping_category"
     t.text "search_keywords", default: [], null: false, array: true
+    t.boolean "hot_deal", default: false, null: false
+    t.text "condition_notes"
+    t.decimal "compare_at_price", precision: 10, scale: 2
+    t.boolean "demo", default: false, null: false
     t.index ["active"], name: "index_products_on_active"
     t.index ["bookable_type"], name: "index_products_on_bookable_type"
     t.index ["category_id"], name: "index_products_on_category_id"
+    t.index ["hot_deal"], name: "index_products_on_hot_deal"
     t.index ["search_keywords"], name: "index_products_on_search_keywords", using: :gin
     t.index ["shipping_category"], name: "index_products_on_shipping_category"
     t.index ["shipping_type"], name: "index_products_on_shipping_type"

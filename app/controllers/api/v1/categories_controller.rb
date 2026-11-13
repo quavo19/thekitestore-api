@@ -83,7 +83,7 @@ module Api
           id: category.id,
           name: category.name,
           description: category.description,
-          image_url: category.image_url,
+          image_url: public_image_url(category.image_url),
           image_storage_key: category.image_storage_key,
           sub_categories_count: sub_categories_count_for(category),
           created_at: category.created_at.iso8601,
@@ -99,13 +99,19 @@ module Api
               category_id: sub_category.category_id,
               name: sub_category.name,
               description: sub_category.description,
-              image_url: sub_category.image_url,
+              image_url: public_image_url(sub_category.image_url),
               image_storage_key: sub_category.image_storage_key,
               created_at: sub_category.created_at.iso8601,
               updated_at: sub_category.updated_at.iso8601
             }
           end
         )
+      end
+
+      def public_image_url(path)
+        return path unless path&.start_with?("/catalog/")
+
+        "#{request.base_url}#{path}"
       end
 
       def sub_categories_count_for(category)

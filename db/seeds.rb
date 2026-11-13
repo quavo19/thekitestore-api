@@ -25,7 +25,7 @@ end
 puts "Seeded #{Role.count} roles and #{Permission.count} permissions"
 
 # Keep the template seed minimal and safe to run repeatedly.
-admin = User.find_or_initialize_by(email: ENV.fetch("SEED_ADMIN_EMAIL", "donaldakite27@mail.com").downcase)
+admin = User.find_or_initialize_by(email: ENV.fetch("SEED_ADMIN_EMAIL", "donald.akite@cowtribe.com").downcase)
 admin.assign_attributes(first_name: "Donald", last_name: "Akite", role: Role.find_by!(name: "SUPER_ADMIN"))
 if admin.new_record? || admin.encrypted_password.blank?
   password = ENV.fetch("SEED_ADMIN_PASSWORD")
@@ -35,3 +35,8 @@ if admin.new_record? || admin.encrypted_password.blank?
 end
 admin.save!
 puts "Seeded super admin #{admin.email} (#{admin.role.name}); #{User.count} users total"
+
+load Rails.root.join("db/seeds/catalog.rb")
+
+# Sample products are opt-in and restricted to the local development environment.
+load Rails.root.join("db/seeds/demo_products.rb") if Rails.env.development? && ENV["SEED_DEMO_PRODUCTS"] == "1"
